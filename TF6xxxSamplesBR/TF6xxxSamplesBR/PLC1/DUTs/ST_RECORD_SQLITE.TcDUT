@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="ST_RECORD_SQLITE" Id="{96bce268-2212-4c06-954f-69ef7e5e22e5}">
+    <Declaration><![CDATA[TYPE ST_RECORD_SQLITE :
+STRUCT
+	nID 			: ULINT;
+	dtTimeStamp		: STRING(255);
+	nCustomerID		: ULINT;
+	nFilmID			: ULINT;
+END_STRUCT
+END_TYPE
+
+(* Note that SQLite Databases uses INTEGER type (dynamic allocation on DB), 
+but for our side of view (PLC) we have 8 bytes always allocated to
+deal with INTEGER. So when we have a INTEGER, we need an ULINT! *)
+
+(* In SQLite, the terms INTEGER and INT generally refer to the same INTEGER affinity, 
+meaning they will store data as signed integers. SQLite's type system is flexible and 
+uses "type affinity" to determine how data is stored, rather than strict data types 
+like in other relational databases. *)]]></Declaration>
+  </DUT>
+</TcPlcObject>

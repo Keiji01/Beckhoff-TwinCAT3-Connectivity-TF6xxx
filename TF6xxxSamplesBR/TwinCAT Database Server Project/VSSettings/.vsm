@@ -1,0 +1,52 @@
+<Node>
+  <Title>TwinCAT Database Server Project</Title>
+  <Expanded>False</Expanded>
+  <FileName></FileName>
+  <Children>
+    <Node>
+      <Title>TcDbServer</Title>
+      <Expanded>True</Expanded>
+      <FileName>C:\Users\lucask\Desktop\TF6420Example\TwinCAT Database Server Project\TcDbServer.tcdbsrv</FileName>
+      <Children>
+        <Node>
+          <Title>PostgreSQLDB</Title>
+          <Expanded>True</Expanded>
+          <FileName>C:\Users\lucask\Desktop\TF6420Example\TwinCAT Database Server Project\TcDbServer\PostgreSQLDB\PostgreSQLDB.tcdbsrvdb</FileName>
+          <Children>
+            <Node>
+              <Title>AutoLogGroup</Title>
+              <Expanded>True</Expanded>
+              <FileName>C:\Users\lucask\Desktop\TF6420Example\TwinCAT Database Server Project\TcDbServer\PostgreSQLDB\AutoLogGroup\AutoLogGroup.tcdbsrvauto</FileName>
+              <Children>
+                <Node>
+                  <Title>AdsDevice</Title>
+                  <Expanded>False</Expanded>
+                  <FileName>C:\Users\lucask\Desktop\TF6420Example\TwinCAT Database Server Project\TcDbServer\PostgreSQLDB\AutoLogGroup\AdsDevice.tcdbsrvads</FileName>
+                  <Children />
+                </Node>
+                <Node>
+                  <Title>Symbols</Title>
+                  <Expanded>False</Expanded>
+                  <FileName>C:\Users\lucask\Desktop\TF6420Example\TwinCAT Database Server Project\TcDbServer\PostgreSQLDB\AutoLogGroup\Symbols.tcdbsrvsym</FileName>
+                  <Children />
+                </Node>
+                <Node>
+                  <Title>DBTable</Title>
+                  <Expanded>False</Expanded>
+                  <FileName>C:\Users\lucask\Desktop\TF6420Example\TwinCAT Database Server Project\TcDbServer\PostgreSQLDB\AutoLogGroup\DBTable.tcdbsrvtbl</FileName>
+                  <Children />
+                </Node>
+              </Children>
+            </Node>
+          </Children>
+        </Node>
+        <Node>
+          <Title>SQLite</Title>
+          <Expanded>False</Expanded>
+          <FileName>C:\Users\lucask\Desktop\TF6420Example\TwinCAT Database Server Project\TcDbServer\SQLite\SQLite.tcdbsrvdb</FileName>
+          <Children />
+        </Node>
+      </Children>
+    </Node>
+  </Children>
+</Node>

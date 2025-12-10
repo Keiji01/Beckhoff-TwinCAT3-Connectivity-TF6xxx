@@ -1,0 +1,107 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="P_DB_INTERACTIONS" Id="{732d8e3a-cc33-4319-9972-0c9dfa0f5703}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM P_DB_INTERACTIONS
+VAR	
+	ColumnNames				: ARRAY[0..3] OF STRING(50);
+	iLastFilmRentId			: UDINT;
+	bNeedsRegister			: BOOL;
+	nState					: INT;
+	stDataToRecord			: ST_RECORD;
+	stDataToRecordSQLite	: ST_RECORD_SQLITE; // Need to adapt column id from bigint to int. See infosys for more details.
+
+	iLastCustomerId			: UDINT;
+	                    	
+	fbPLCExpertWrite			: FB_PLC_EXPERT_WRITE_4_COLUMNS;
+	fbPLCExpertWriteSQLite		: FB_PLC_EXPERT_WRITE_4_COLUMNS_SQLITE;
+	systime						: GETSYSTEMTIME;
+	currentTime					: T_FILETIME;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* Program to register everytime that a simulated customer rents a film *)
+
+IF iLastFilmRentId <> P_RENT_GENERATOR.idFilmRent THEN	
+	GVL_Rentals.iTotalRentalsOfLastPeriod := GVL_Rentals.iTotalRentalsOfLastPeriod + 1;	
+	iLastFilmRentId := P_RENT_GENERATOR.idFilmRent;	
+	iLastCustomerId	:= P_RENT_GENERATOR.idCustomerID;
+	bNeedsRegister 	:= TRUE;	
+END_IF
+
+// getting localtime now
+systime(timeLoDW => currentTime.dwLowDateTime, timeHiDW => currentTime.dwHighDateTime );
+
+CASE nState OF 
+	0: // Waiting for register request
+		fbPLCExpertWrite(bWrite:=FALSE);
+		fbPLCExpertWriteSQLite(bWrite:=FALSE);
+		IF bNeedsRegister THEN
+			// set columnnames
+			ColumnNames[0] := 'id';
+			ColumnNames[1] := 'create_date';
+			ColumnNames[2] := 'customer';
+			ColumnNames[3] := 'film_id';
+				
+			// custome and film data
+			stDataToRecord.nCustomerID 			:= UDINT_TO_DINT(iLastCustomerId);
+			stDataToRecord.nFilmID				:= UDINT_TO_DINT(iLastFilmRentId);
+			stDataToRecord.dtTimeStamp 			:= FILETIME_TO_DT(currentTime);
+			stDataToRecordSQLite.dtTimeStamp 	:= SQLITE_DATE_HANDLE(FILETIME_TO_DT(currentTime));
+			
+			
+			nState := 10;
+		END_IF
+		
+	10: // Trying to Register on Main DB [PostgreSQL on remote PC/Server]		
+		fbPLCExpertWrite(
+					bWrite:= TRUE, 
+					ColumnNames:= ColumnNames, 
+					stDataToRecord:= stDataToRecord,
+					sTableName := 'plc_data_customer_and_film',
+					hDBID := 1,
+					bError => , 
+					bSuccess =>, 
+					tcMessage =>);
+					
+		IF fbPLCExpertWrite.bSuccess THEN			
+			nState := 20;
+		ELSIF fbPLCExpertWrite.bError THEN
+			fbPLCExpertWrite(bWrite:=FALSE, bReset:=TRUE);
+			stDataToRecordSQLite.nCustomerID 	:= DINT_TO_ULINT(stDataToRecord.nCustomerID);
+			stDataToRecordSQLite.nFilmID		:= DINT_TO_ULINT(stDataToRecord.nFilmID);
+			nState := 255;			
+		END_IF		
+		
+	20: // Success Registration on main DB, no more actions needed
+		bNeedsRegister := FALSE;
+		nState := 0;
+	
+	255: // Failed to register on main DB, so we must try the failover db [Local SQLite]
+		fbPLCExpertWriteSQLite(
+					bWrite:= TRUE, 
+					ColumnNames:= ColumnNames, 
+					stDataToRecord:= stDataToRecordSQLite,
+					sTableName := 'plc_data_customer_and_film',
+					hDBID := 5,
+					bError => , 
+					bSuccess =>, 
+					tcMessage =>);
+		IF fbPLCExpertWriteSQLite.bSuccess THEN			
+			nState := 275;
+		ELSIF fbPLCExpertWriteSQLite.bError THEN
+			fbPLCExpertWriteSQLite(bWrite:=FALSE, bReset:=TRUE);
+			nState := 999;			
+		END_IF
+		
+	275: // Success Registration on failover DB, lets up a flag with needed sync
+		bNeedsRegister := FALSE;
+		nState := 0;
+END_CASE
+
+
+
+
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="P_START_AUTO_LOG_GROUP" Id="{21addae6-040f-4056-87b6-a4e34842a8dc}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM P_START_AUTO_LOG_GROUP
+VAR
+	
+	fbStartAutoLog01	: FB_PLCDBAutoLogEvt(sNetID:='', tTimeout := T#5S); 	// FUNCTION BLOCK to enable Auto Log from PLC
+	bStart				: BOOL; 				// bit to Start Auto Log
+	bStart_RTrig		: R_TRIG;
+	bStart_FTrig		: F_TRIG;
+	bAutoLogError		: BOOL;
+	stAutoLogStatus		: ARRAY [0..MAX_CONFIGURATIONS] OF ST_AutoLogGrpStatus;
+	bAutoLogStatus		: BOOL;
+	bStop				: BOOL;
+END_VAR
+
+VAR_OUTPUT
+	bSendAutologStatReset : BOOL; // Send Autolog Statistics Reset
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* Program that start and stops AutoLog Group *)
+
+bStart_FTrig(CLK:= bStart, Q=> );
+bStart_RTrig(CLK:= bStart, Q=> );
+
+IF bStart AND NOT fbStartAutoLog01.bBusy THEN
+	IF fbStartAutoLog01.Start() THEN
+		bStart := FALSE;
+	END_IF
+END_IF
+
+IF bStop THEN
+	IF fbStartAutoLog01.Stop() THEN
+		bStart := FALSE;
+	END_IF
+END_IF
+
+
+bAutoLogStatus := fbStartAutoLog01.Status(
+						tCheckCycle:= T#2S, 
+						pError:= ADR(bAutoLogError),
+						pAutoLogGrpStatus:= ADR(stAutoLogStatus), 
+						cbAutoLogGrpStatus:= SIZEOF(stAutoLogStatus)
+);
+
+IF bAutoLogStatus THEN
+	IF NOT bAutoLogError THEN
+		bSendAutologStatReset := TRUE;
+	END_IF
+ELSE
+	bSendAutologStatReset := FALSE;
+END_IF]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

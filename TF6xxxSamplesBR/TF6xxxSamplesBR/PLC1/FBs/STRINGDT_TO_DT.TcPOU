@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="STRINGDT_TO_DT" Id="{627f5891-435e-40e6-a4c0-f81a47c3faa3}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION STRINGDT_TO_DT : DATE_AND_TIME
+
+
+VAR_INPUT
+	strDate : STRING;
+END_VAR
+VAR
+	sDelete: STRING(INT#1);
+	sInsert: STRING(INT#1);
+	sFormattedDate: STRING;
+	finalDt: DATE_AND_TIME;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[sDelete := 'T';
+sInsert := '-';
+sFormattedDate := '';
+
+
+
+FindAndReplace(
+	pSrcString:= ADR(strDate), 
+	pDeleteString:= ADR(sDelete), 
+	pInsertString:= ADR(sInsert), 
+	pDstString:= ADR(sFormattedDate), 
+	nDstSize:= SIZEOF(sFormattedDate));
+
+
+
+finalDt := SYSTEMTIME_TO_DT(TIMESTR:= STRING_TO_SYSTEMTIME(in:= sFormattedDate));
+
+STRINGDT_TO_DT := finalDt;
+
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

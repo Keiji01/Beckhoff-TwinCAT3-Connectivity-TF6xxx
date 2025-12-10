@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="STRINGDT_FORMAT_TO_POSTGRES" Id="{eb61d862-dbf4-4d9b-9169-61bc9da78d62}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION STRINGDT_FORMAT_TO_POSTGRES : STRING
+VAR_INPUT
+	strDate : STRING;
+END_VAR
+
+VAR
+	sDelete: STRING(INT#1);
+	sInsert: STRING(INT#1);
+	sFormattedDate: STRING;
+	finalDt: DATE_AND_TIME;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[sDelete := 'T';
+sInsert := ' ';
+sFormattedDate := '';
+
+
+
+FindAndReplace(
+	pSrcString:= ADR(strDate), 
+	pDeleteString:= ADR(sDelete), 
+	pInsertString:= ADR(sInsert), 
+	pDstString:= ADR(sFormattedDate), 
+	nDstSize:= SIZEOF(sFormattedDate));
+
+
+
+STRINGDT_FORMAT_TO_POSTGRES := sFormattedDate;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

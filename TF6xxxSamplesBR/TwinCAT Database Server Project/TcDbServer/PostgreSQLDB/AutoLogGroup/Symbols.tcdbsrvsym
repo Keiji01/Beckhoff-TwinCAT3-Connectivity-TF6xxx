@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<SymbolList>
+  <ID>1</ID>
+  <Name>Symbols</Name>
+  <Symbols>
+    <Symbol>
+      <ID>1</ID>
+      <Name>GVL_Rentals.iTotalRentalsOfLastPeriod</Name>
+      <AllocationName>iTotalRentalsOfLastPeriod</AllocationName>
+      <DataType>DINT</DataType>
+      <BitSize>32</BitSize>
+      <IndexGroup>16448</IndexGroup>
+      <IndexOffset>415796</IndexOffset>
+    </Symbol>
+  </Symbols>
+</SymbolList>

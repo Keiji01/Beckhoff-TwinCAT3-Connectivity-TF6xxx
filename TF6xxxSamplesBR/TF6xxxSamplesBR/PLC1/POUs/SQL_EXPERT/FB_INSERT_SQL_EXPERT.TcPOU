@@ -1,0 +1,83 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_INSERT_SQL_EXPERT" Id="{61ee72a7-c738-4da8-8166-5e9f3eefe4cd}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_INSERT_SQL_EXPERT
+VAR_INPUT
+	bStart		: BOOL;
+	nDBID 		: UINT;
+	sQuery 		: STRING(1000);
+END_VAR
+VAR_OUTPUT
+	bSuccess: BOOL;
+	bError: BOOL;
+END_VAR
+VAR
+	nState						: INT;	
+	fbSqlDatabase		 		: FB_SQLDatabaseEvt(sNetID := '', tTimeout := T#5S);
+	fbSqlCommand				: FB_SQLCommandEvt(sNetID := '', tTimeout := T#5S);
+	tcMessage					: Tc3_Database.I_TcMessage;
+	nStateError					: INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[CASE nState OF
+	0: // Waiting for bStart
+		bSuccess := FALSE;
+		bError	 := FALSE;
+		IF bStart THEN			
+			nState := nState + 10;
+		END_IF	
+	
+	10: // Connecting to DB
+		IF fbSqlDatabase.Connect(nDBID) THEN
+			IF fbSqlDatabase.bError THEN
+				nStateError	:= nState;
+				nState := 255;
+			ELSE
+				nState := nState + 10; 
+			END_IF
+		END_IF
+	
+	20: // Create CMD (Open connection on state 10)
+		IF fbSqlDatabase.CreateCmd(ADR(fbSqlCommand)) THEN
+			IF fbSqlDatabase.bError THEN
+				nStateError	:= nState;
+				nState := 255; 				
+			ELSE
+				nState := nState + 10;
+			END_IF
+		END_IF
+		
+	30: // Execute INSERT command
+		IF fbSqlCommand.Execute(ADR(sQuery), SIZEOF(sQuery)) THEN
+			IF fbSqlCommand.bError THEN
+				tcMessage := fbSqlCommand.ipTcResult;
+				nStateError	:= nState;		
+				nState := 255;
+			ELSE
+				nState := nState + 10;
+			END_IF
+		END_IF
+		
+	40: // Disconnect from DB
+		IF fbSqlDatabase.Disconnect() THEN
+			IF fbSqlDatabase.bError THEN
+				nStateError	:= nState;
+				nState := 255;
+			ELSE
+				nState := nState + 10;							
+			END_IF
+		END_IF
+	
+	50: // Sucess 
+		bSuccess := TRUE;
+		nState := 0;
+		
+		
+	255: // Error Handling
+		bError := TRUE;
+		nState := 0;
+END_CASE]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,74 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_PLC_EXPERT_WRITE_4_COLUMNS_SQLITE" Id="{470d8c77-705b-4b7a-981d-2f89f2347da4}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PLC_EXPERT_WRITE_4_COLUMNS_SQLITE
+VAR_INPUT
+	bWrite 				: BOOL;
+	bReset				: BOOL;
+	ColumnNames 		: ARRAY[0..3] OF STRING(50);
+	stDataToRecord		: ST_RECORD_SQLITE;	
+	sTableName			: STRING;
+	hDBID				: UINT;	
+END_VAR
+
+VAR_OUTPUT	
+	tcMessage: Tc3_Database.I_TcMessage;
+	bSuccess: BOOL;
+	bError: BOOL;
+END_VAR
+
+VAR
+
+	nState				: INT;
+	fbPLCDBWrite		: FB_PLCDBWriteEvt(sNetID := '', tTimeout := TIME#10S0MS);
+	stRecordWhenError	: ST_RECORD_SQLITE;
+END_VAR
+
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* Function block to write using PLC Expert on SQLite DB, with 4 columns *)
+
+IF bReset THEN
+	nState := 0;
+END_IF
+
+CASE nState OF 
+	0: // Waiting for Register Request
+		bSuccess 	:= FALSE;
+		bError		:= FALSE;
+		bReset		:= FALSE;
+		
+		IF bWrite THEN
+			nState := 10;
+		END_IF
+		
+	10: // Trying to Register on Main DB [PostgreSQL]		
+		IF fbPLCDBWrite.WriteStruct(
+			hDBID			:= hDBID, // Fill with DB ID from TF6420 DB Configurator
+			sTableName		:= sTableName, // DB table
+			pRecord			:= ADR(stDataToRecord), // pointer to incoming data
+			cbRecord		:= SIZEOF(stDataToRecord), // lenght of incoming data
+			pColumnNames	:= ADR(ColumnNames), // column names of db table
+			cbColumnNames	:= SIZEOF(ColumnNames)) // lenght of incoming data
+		THEN
+			IF fbPLCDBWrite.bError THEN
+				stRecordWhenError 	:= stDataToRecord;				
+				tcMessage 			:= fbPLCDBWrite.ipTcResult;				
+				nState				:= 255;
+			ELSE
+				bSuccess 			:= TRUE;
+				nState 				:= 0;
+			END_IF
+			
+		END_IF	
+	
+	255: // Error State
+		bError := TRUE;
+		
+		
+		
+END_CASE
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,138 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="P_FAILOVER_SYNC" Id="{6b095353-de68-4548-b08f-f9af7e5293ab}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM P_FAILOVER_SYNC
+VAR
+	bStartSync					: BOOL;
+	nState						: INT;
+	fbSqlDatabase_SQLITE 		: FB_SQLDatabaseEvt(sNetID := '', tTimeout := T#5S);
+	fbSqlCommand_SQLITE			: FB_SQLCommandEvt(sNetID := '', tTimeout := T#5S);
+	fbSqlResult_SQLITE			: FB_SQLResultEvt(sNetID := '', tTimeout := T#5S);
+	
+	fbSqlDatabase_POSTGRES 		: FB_SQLDatabaseEvt(sNetID := '', tTimeout := T#5S);
+	fbSqlCommand_POSTGRES		: FB_SQLCommandEvt(sNetID := '', tTimeout := T#5S);
+	
+    tcMessage    				: I_TcMessage;
+	aReadStruct 				: ARRAY[1..iMaxReadRecords] OF ST_RECORD_SQLITE;
+	
+	sCmd						: STRING(1000);
+	sQueries					: ARRAY[1..iMaxReadRecords] OF STRING(1000);
+	i							: INT;
+	sInitialQuery				: STRING(1000);
+	fbInsertPG					: FB_INSERT_SQL_EXPERT;
+	nStateError					: INT;
+	iValidQueries				: INT;
+END_VAR
+
+VAR CONSTANT
+	iMaxReadRecords	: UINT := 1000;
+	nDBID_Postgres	: UINT := 1;
+	nDBID_SQLite	: UINT := 5;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* Program to sync our FailOver DB with MainDB *)
+
+CASE nState OF
+	0: // Waiting for bStartSync Flag
+		IF bStartSync THEN
+			nState := nState+10;
+		END_IF
+		
+	10: // Open connection with Failover [SQLite] DB ID = 5
+		IF fbSqlDatabase_SQLITE.Connect(5) THEN
+			IF fbSqlDatabase_SQLITE.bError THEN
+				nStateError := nState;				
+				nState := 255;
+			ELSE
+				nState := nState+10;			
+			END_IF
+		END_IF
+		
+	20: // Success connection, let's create the command		
+		IF fbSqlDatabase_SQLITE.CreateCmd(ADR(fbSqlCommand_SQLITE)) THEN
+			IF fbSqlDatabase_SQLITE.bError THEN
+				nStateError := nState;
+				nState := 255; 
+			ELSE
+				nState := nState+10; 
+			END_IF
+		END_IF
+	
+	30: // Now try the SELECT command to SQLITE db
+		// you can generate this with the SQL Query Editor 
+		sCmd := 'SELECT id, create_date, customer, film_id FROM plc_data_customer_and_film';		
+		
+		// call sql command
+		IF fbSqlCommand_SQLITE.ExecuteDataReturn(ADR(sCmd), SIZEOF(sCmd), ADR(fbSqlResult_SQLITE)) THEN
+			IF fbSqlCommand_SQLITE.bError THEN
+				nStateError := nState;
+				nState := 255; 
+			ELSE
+				 tcMessage := fbSqlCommand_SQLITE.ipTcResult;
+				nState := nState+10; 
+			END_IF
+		END_IF		
+		
+	40: // Now lets fetch the result
+		IF fbSqlResult_SQLITE.Read(0, 1000, ADR(aReadStruct), SIZEOF(aReadStruct), FALSE, TRUE) THEN
+			IF fbSqlResult_SQLITE.bError THEN
+				nStateError := nState;
+				nState := 255; 
+			ELSE
+				nState := nState+10; 
+			END_IF
+		END_IF
+	
+	50: // Let's open the connection with our Main DB ID = 1 [PostgreSQL]
+		nState := nState + 10;
+		
+		
+	60: // Create command on Postgre
+		nState := nState + 10;
+		
+	70: // Now, for each found result, let's iterate on it and register on Main DB
+		// you can generate this with the SQL Query Editor 
+		
+		// Observe that you need to form the query string. You can use my sample to try to do that.
+		
+		sInitialQuery := 'INSERT INTO "plc_data_customer_and_film" ( "create_date", "customer", "film_id") VALUES (';
+		FOR i := 1 TO iMaxReadRecords BY 1 DO			
+			IF aReadStruct[i].dtTimeStamp <> '' THEN
+				sQueries[i] := F_MOUNT_QUERY(
+									sInitialQuery := sInitialQuery,
+									sCreateDate:= STRINGDT_FORMAT_TO_POSTGRES(aReadStruct[i].dtTimeStamp), 
+									sCustomer:= ULINT_TO_STRING(aReadStruct[i].nCustomerID), 
+									sFilmID:= ULINT_TO_STRING(aReadStruct[i].nFilmID));
+			ELSE
+				iValidQueries := i-1;
+				i := 1;
+				nState := 80;
+				EXIT;	
+			END_IF
+		END_FOR
+		
+	80: // OK
+		IF i <= iValidQueries THEN
+			fbInsertPG(bStart:= TRUE, nDBID:= nDBID_Postgres, sQuery:= sQueries[i], bError =>, bSuccess=> );
+			IF fbInsertPG.bError THEN
+				nStateError := nState;
+				nState := 255;
+			ELSIF fbInsertPG.bSuccess THEN
+				fbInsertPG(bStart:= FALSE);
+				i := i + 1;
+			END_IF
+		ELSE
+			nState := nState + 10;
+		END_IF
+		
+	
+			
+	255: // Error state
+	
+	
+END_CASE
+
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

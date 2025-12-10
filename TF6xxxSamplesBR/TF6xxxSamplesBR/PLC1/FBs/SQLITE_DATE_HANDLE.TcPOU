@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="SQLITE_DATE_HANDLE" Id="{e2c8573a-123e-4e67-bf33-d354159b2c60}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION SQLITE_DATE_HANDLE : STRING
+VAR_INPUT
+	DT_in	: DATE_AND_TIME;	
+END_VAR
+VAR
+	dateStr		: Tc2_Utilities.T_FILETIME64;
+	dateWOUtz	: STRING;
+	strUtz		: STRING;
+	sSeparator	: STRING(INT#1);
+	dateISO: STRING(39);
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* Function block to convert DT type to STR datetime, to we use on SQLite DB *)
+
+
+dateStr := DT_TO_FILETIME64(DT_in);
+
+dateISO := FILETIME64_TO_ISO8601(fileTime:= dateStr,
+								 nBias:= 0,
+								 bUTC:= TRUE,
+								 nPrecision:= 0);
+sSeparator := '+';
+
+FindAndSplit(
+			pSeparator:= ADR(sSeparator), 
+			pSrcString:= ADR(dateISO), 
+			pLeftString:= ADR(dateWOUtz), 
+			nLeftSize:= SIZEOF(dateWOUtz), 
+			pRightString:= ADR(strUtz), 
+			nRightSize:= SIZEOF(strUtz), 
+			bSearchFromRight:= FALSE);
+
+dateWOUtz;
+strUtz;
+
+SQLITE_DATE_HANDLE := dateWOUtz;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

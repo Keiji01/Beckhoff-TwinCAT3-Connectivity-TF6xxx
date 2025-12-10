@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="ST_RECORD" Id="{873580b0-4dac-43c6-8c03-b9be14260be0}">
+    <Declaration><![CDATA[TYPE ST_RECORD :
+STRUCT
+	nID 			: ULINT;
+	dtTimeStamp		: DATE_AND_TIME;
+	nCustomerID		: DINT;
+	nFilmID			: DINT;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

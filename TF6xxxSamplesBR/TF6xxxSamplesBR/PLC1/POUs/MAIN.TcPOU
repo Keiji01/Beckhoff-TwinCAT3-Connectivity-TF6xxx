@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="MAIN" Id="{f7465492-7950-48c3-b880-54e0cb9097c1}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MAIN
+VAR
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* Programs to Generate Simulation Data *)
+P_RENT_GENERATOR(idFilmRent =>);
+
+
+(* Program to Test AutoLog Group Funcionality *)
+P_START_AUTO_LOG_GROUP();
+
+
+(* Program to Save on PostGreSQL and if it fails user a failover DB on local SQLite [PLC_EXPERT] *)
+P_DB_INTERACTIONS();
+
+
+(* Program to Sync [SQL_EXPERT] *)
+P_FAILOVER_SYNC();
+
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="F_MOUNT_QUERY" Id="{92e83f12-311e-4f2b-97c9-2d143331c983}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION F_MOUNT_QUERY : STRING(1000)
+VAR_INPUT
+	sInitialQuery	: STRING(1000);
+	sCreateDate		: STRING;
+	sCustomer		: STRING;
+	sFilmID			: STRING;
+	
+END_VAR
+VAR
+	sDelete: STRING;
+	sInsert: STRING;
+	sFinalQuery: STRING(1000);
+	dateWithDollar: STRING(255);
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// replacing values
+dateWithDollar := CONCAT('$'', sCreateDate);
+dateWithDollar := CONCAT(dateWithDollar, '$'');
+
+// 'INSERT INTO "public"."plc_data_customer_and_film" ( "create_date", "customer", "film_id") VALUES ( $'2025-08-27 16:15:49$', 0, 0) '
+
+sFinalQuery := CONCAT(sInitialQuery, dateWithDollar);
+sFinalQuery := CONCAT(sFinalQuery, ', ');
+sFinalQuery := CONCAT(sFinalQuery, sCustomer);
+sFinalQuery := CONCAT(sFinalQuery, ', ');
+sFinalQuery := CONCAT(sFinalQuery, sFilmID);
+sFinalQuery := CONCAT(sFinalQuery, ' )');
+
+
+F_MOUNT_QUERY := sFinalQuery;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,53 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="P_RENT_GENERATOR" Id="{04711d1a-0478-42b0-8cf2-862170330ef6}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM P_RENT_GENERATOR
+VAR
+	RandomNumber				: DRAND;
+	RandomNumber2				: DRAND;
+	lrRandomNumberGenerated		: LREAL;
+	lrRandomNumberGenerated2		: LREAL;
+	fbClock1s					: FB_CLOCK;
+	
+	strFilmRent					: STRING(510);
+	FilmRent					: Tc2_Utilities.T_ULARGE_INTEGER;
+	strCustomerID				: STRING(510);
+	CustomerID					: Tc2_Utilities.T_ULARGE_INTEGER;
+	bGenerate: BOOL;
+END_VAR
+
+VAR_OUTPUT
+	idFilmRent					: UDINT;
+	idCustomerID				: UDINT;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* Program to generate simulated data to we use on our sample/example *)
+
+IF bGenerate THEN
+	fbClock1s(
+		bENABLE:= TRUE, 
+		TIME_ON:= T#1S, 
+		TIME_OFF:= T#1S, 
+		OUT_CLK=> , 
+		OUT_CLK_R_TRIGGED=> );
+	
+	IF fbClock1s.OUT_CLK_R_TRIGGED THEN
+		RandomNumber(Seed:= 1, Num=> lrRandomNumberGenerated);
+		RandomNumber2(Seed:= 25, Num=> lrRandomNumberGenerated2);
+	END_IF
+	
+	strFilmRent 	:= LREAL_TO_FMTSTR(in:= lrRandomNumberGenerated, iPrecision:= 3, bRound:= TRUE);
+	strCustomerID 	:= LREAL_TO_FMTSTR(in:= lrRandomNumberGenerated2, iPrecision:= 3, bRound:= TRUE);
+	
+	
+	FilmRent 		:= STRING_TO_UINT64(RIGHT(strFilmRent, 3));
+	CustomerID 		:= STRING_TO_UINT64(RIGHT(strCustomerID, 3));
+	
+	idFilmRent 		:= FilmRent.dwLowPart;
+	idCustomerID 	:= CustomerID.dwLowPart;	
+END_IF
+
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
